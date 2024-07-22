@@ -1,0 +1,70 @@
+[
+  {
+    "id": 2,
+    "title": "Producto 2",
+    "description": "Descripción del producto 2",
+    "code": "P002",
+    "price": 200,
+    "status": true,
+    "stock": 20,
+    "category": "Categoría 2",
+    "thumbnails": [
+      "ruta3.jpg",
+      "ruta4.jpg"
+    ]
+  },
+  {
+    "id": 3,
+    "title": "Producto Nuevo2",
+    "description": "Descripción del nuevo producto",
+    "code": "P0032",
+    "price": 3002,
+    "status": true,
+    "stock": 302,
+    "category": "Categoría 32",
+    "thumbnails": [
+      "ruta5.jpg",
+      "ruta6.jpg"
+    ]
+  },
+  {
+    "id": 4,
+    "title": "Perro",
+    "description": "Perra",
+    "code": "3",
+    "price": "100",
+    "status": "true",
+    "stock": "100",
+    "category": "Categoria32",
+    "thumbnails": [
+      "ruta1",
+      "ruta2"
+    ]
+  },
+  {
+    "id": 5,
+    "title": "Perro",
+    "description": "Perra",
+    "code": "100",
+    "price": "100",
+    "status": true,
+    "stock": "100",
+    "category": "32",
+    "thumbnails": [
+      "S/N"
+    ]
+  },
+  {
+    "id": 6,
+    "title": "Perro",
+    "description": "Perra",
+    "code": "1002",
+    "price": "100",
+    "status": true,
+    "stock": "10022",
+    "category": "32",
+    "thumbnails": [
+      "S/N"
+    ]
+  }
+]

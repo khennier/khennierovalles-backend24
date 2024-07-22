@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+</head>
+<body>
+    <h1>{{title}}</h1>
+    <ul id="product-list">
+        {{#each products}}
+            <li data-id="{{this.id}}">
+                <strong>{{this.title}}</strong> - {{this.price}}<br>
+                {{this.description}}<br>
+                ID: {{this.id}}<br>
+                Code: {{this.code}}<br>
+                Status: {{this.status}}<br>
+                Stock: {{this.stock}}<br>
+                Category: {{this.category}}<br>
+            </li>
+        {{/each}}
+    </ul>
+
+    <form id="product-form">
+        <input type="text" id="title" placeholder="Product Title" required>
+        <input type="text" id="description" placeholder="Product Description" required>
+        <input type="text" id="code" placeholder="Product Code" required>
+        <input type="number" id="price" placeholder="Product Price" required>
+        <input type="number" id="stock" placeholder="Product Stock" required>
+        <input type="text" id="category" placeholder="Product Category" required>
+        <button type="submit">Add Product</button>
+    </form>
+
+    <form id="delete-form">
+        <input type="number" id="delete-id" placeholder="Product ID to Delete" required>
+        <button type="submit">Delete Product</button>
+    </form>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        socket.on('updateProducts', (product) => {
+            const productList = document.getElementById('product-list');
+            const newProduct = document.createElement('li');
+            newProduct.dataset.id = product.id;
+            newProduct.innerHTML = `
+                <strong>${product.title}</strong> - ${product.price}<br>
+                ${product.description}<br>
+                Code: ${product.code}<br>
+                Status: ${product.status}<br>
+                Stock: ${product.stock}<br>
+                Category: ${product.category}<br>
+            `;
+            productList.appendChild(newProduct);
+        });
+
+        socket.on('removeProduct', (productId) => {
+            const productList = document.getElementById('product-list');
+            const productToRemove = document.querySelector(`li[data-id='${productId}']`);
+            if (productToRemove) {
+                productList.removeChild(productToRemove);
+            }
+        });
+
+        document.getElementById('product-form').addEventListener('submit', (event) => {
+            event.preventDefault();
+            const title = document.getElementById('title').value;
+            const description = document.getElementById('description').value;
+            const code = document.getElementById('code').value;
+            const price = document.getElementById('price').value;
+            const stock = document.getElementById('stock').value;
+            const category = document.getElementById('category').value;
+
+            const product = {
+                title,
+                description,
+                code,
+                price,
+                status: true,
+                stock,
+                category,
+                thumbnails: ['S/N']
+            };
+
+            socket.emit('newProduct', product);
+        });
+
+        document.getElementById('delete-form').addEventListener('submit', (event) => {
+            event.preventDefault();
+            const productId = document.getElementById('delete-id').value;
+            socket.emit('deleteProduct', productId);
+        });
+    </script>
+</body>
+</html>

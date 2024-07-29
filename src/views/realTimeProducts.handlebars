@@ -12,11 +12,12 @@
             <li data-id="{{this.id}}">
                 <strong>{{this.title}}</strong> - {{this.price}}<br>
                 {{this.description}}<br>
-                ID: {{this.id}}<br>
                 Code: {{this.code}}<br>
                 Status: {{this.status}}<br>
                 Stock: {{this.stock}}<br>
                 Category: {{this.category}}<br>
+                <button onclick="fillUpdateForm({{this.id}}, '{{this.title}}', '{{this.description}}', '{{this.code}}', {{this.price}}, {{this.stock}}, '{{this.category}}')">Update</button>
+                <button onclick="deleteProduct({{this.id}})">Delete</button>
             </li>
         {{/each}}
     </ul>
@@ -31,65 +32,119 @@
         <button type="submit">Add Product</button>
     </form>
 
-    <form id="delete-form">
-        <input type="number" id="delete-id" placeholder="Product ID to Delete" required>
-        <button type="submit">Delete Product</button>
+    <form id="update-form">
+        <input type="hidden" id="update-id">
+        <input type="text" id="update-title" placeholder="Product Title" required>
+        <input type="text" id="update-description" placeholder="Product Description" required>
+        <input type="text" id="update-code" placeholder="Product Code" required>
+        <input type="number" id="update-price" placeholder="Product Price" required>
+        <input type="number" id="update-stock" placeholder="Product Stock" required>
+        <input type="text" id="update-category" placeholder="Product Category" required>
+        <button type="submit">Update Product</button>
     </form>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        const socket = io();
+        document.addEventListener('DOMContentLoaded', () => {
+            const socket = io();
 
-        socket.on('updateProducts', (product) => {
-            const productList = document.getElementById('product-list');
-            const newProduct = document.createElement('li');
-            newProduct.dataset.id = product.id;
-            newProduct.innerHTML = `
-                <strong>${product.title}</strong> - ${product.price}<br>
-                ${product.description}<br>
-                Code: ${product.code}<br>
-                Status: ${product.status}<br>
-                Stock: ${product.stock}<br>
-                Category: ${product.category}<br>
-            `;
-            productList.appendChild(newProduct);
-        });
+            socket.on('updateProducts', (product) => {
+                const productList = document.getElementById('product-list');
+                let productItem = document.querySelector(`li[data-id='${product.id}']`);
+                if (productItem) {
+                    productItem.innerHTML = `
+                        <strong>${product.title}</strong> - ${product.price}<br>
+                        ${product.description}<br>
+                        Code: ${product.code}<br>
+                        Status: ${product.status}<br>
+                        Stock: ${product.stock}<br>
+                        Category: ${product.category}<br>
+                        <button onclick="fillUpdateForm(${product.id}, '${product.title}', '${product.description}', '${product.code}', ${product.price}, ${product.stock}, '${product.category}')">Update</button>
+                        <button onclick="deleteProduct(${product.id})">Delete</button>
+                    `;
+                } else {
+                    const newProduct = document.createElement('li');
+                    newProduct.dataset.id = product.id;
+                    newProduct.innerHTML = `
+                        <strong>${product.title}</strong> - ${product.price}<br>
+                        ${product.description}<br>
+                        Code: ${product.code}<br>
+                        Status: ${product.status}<br>
+                        Stock: ${product.stock}<br>
+                        Category: ${product.category}<br>
+                        <button onclick="fillUpdateForm(${product.id}, '${product.title}', '${product.description}', '${product.code}', ${product.price}, ${product.stock}, '${product.category}')">Update</button>
+                        <button onclick="deleteProduct(${product.id})">Delete</button>
+                    `;
+                    productList.appendChild(newProduct);
+                }
+            });
 
-        socket.on('removeProduct', (productId) => {
-            const productList = document.getElementById('product-list');
-            const productToRemove = document.querySelector(`li[data-id='${productId}']`);
-            if (productToRemove) {
-                productList.removeChild(productToRemove);
+            socket.on('removeProduct', (productId) => {
+                const productList = document.getElementById('product-list');
+                const productToRemove = document.querySelector(`li[data-id='${productId}']`);
+                if (productToRemove) {
+                    productList.removeChild(productToRemove);
+                }
+            });
+
+            document.getElementById('product-form').addEventListener('submit', (event) => {
+                event.preventDefault();
+                const title = document.getElementById('title').value;
+                const description = document.getElementById('description').value;
+                const code = document.getElementById('code').value;
+                const price = document.getElementById('price').value;
+                const stock = document.getElementById('stock').value;
+                const category = document.getElementById('category').value;
+
+                const product = {
+                    title,
+                    description,
+                    code,
+                    price,
+                    status: true,
+                    stock,
+                    category,
+                    thumbnails: ['S/N']
+                };
+
+                socket.emit('newProduct', product);
+            });
+
+            document.getElementById('update-form').addEventListener('submit', (event) => {
+                event.preventDefault();
+                const productId = document.getElementById('update-id').value;
+                const title = document.getElementById('update-title').value;
+                const description = document.getElementById('update-description').value;
+                const code = document.getElementById('update-code').value;
+                const price = document.getElementById('update-price').value;
+                const stock = document.getElementById('update-stock').value;
+                const category = document.getElementById('update-category').value;
+
+                const updatedProduct = {
+                    title,
+                    description,
+                    code,
+                    price,
+                    stock,
+                    category
+                };
+
+                socket.emit('updateProduct', productId, updatedProduct);
+            });
+
+            window.fillUpdateForm = (id, title, description, code, price, stock, category) => {
+                document.getElementById('update-id').value = id;
+                document.getElementById('update-title').value = title;
+                document.getElementById('update-description').value = description;
+                document.getElementById('update-code').value = code;
+                document.getElementById('update-price').value = price;
+                document.getElementById('update-stock').value = stock;
+                document.getElementById('update-category').value = category;
             }
-        });
 
-        document.getElementById('product-form').addEventListener('submit', (event) => {
-            event.preventDefault();
-            const title = document.getElementById('title').value;
-            const description = document.getElementById('description').value;
-            const code = document.getElementById('code').value;
-            const price = document.getElementById('price').value;
-            const stock = document.getElementById('stock').value;
-            const category = document.getElementById('category').value;
-
-            const product = {
-                title,
-                description,
-                code,
-                price,
-                status: true,
-                stock,
-                category,
-                thumbnails: ['S/N']
+            window.deleteProduct = (id) => {
+                socket.emit('deleteProduct', id);
             };
-
-            socket.emit('newProduct', product);
-        });
-
-        document.getElementById('delete-form').addEventListener('submit', (event) => {
-            event.preventDefault();
-            const productId = document.getElementById('delete-id').value;
-            socket.emit('deleteProduct', productId);
         });
     </script>
 </body>

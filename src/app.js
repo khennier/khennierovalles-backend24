@@ -5,7 +5,8 @@ import { Server as SocketIO } from 'socket.io';
 import http from 'http';
 import cartRoutes from './routes/carts.js';
 import productRoutes from './routes/products.js';
-import { renderHome, renderRealTimeProducts, addProduct, deleteProduct } from './controllers/productController.js';
+import { setupSockets } from './sockets/sockets.js';
+import viewRoutes from './routes/views.router.js';
 
 const app = express();
 const PORT = 8080;
@@ -33,26 +34,9 @@ app.use(express.static(path.join(process.cwd(), 'src/public')));
 
 app.use('/api/carts', cartRoutes);
 app.use('/api/products', productRoutes);
+app.use('/', viewRoutes);
 
-app.get('/', renderHome);
-
-app.get('/realtimeproducts', renderRealTimeProducts);
-
-io.on('connection', (socket) => {
-    console.log('New client connected');
-
-    socket.on('newProduct', (product) => {
-        addProduct(product, io);
-    });
-
-    socket.on('deleteProduct', (productId) => {
-        deleteProduct(productId, io);
-    });
-
-    socket.on('disconnect', () => {
-        console.log('Client disconnected');
-    });
-});
+setupSockets(io);
 
 server.listen(PORT, () => {
     console.log(`Listening on PORT ${PORT}`);

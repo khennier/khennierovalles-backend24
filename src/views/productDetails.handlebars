@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+</head>
+<body>
+    <h1>{{title}}</h1>
+    <div>
+        <strong>{{product.title}}</strong> - {{product.price}}<br>
+        {{product.description}}<br>
+        Code: {{product.code}}<br>
+        Status: {{product.status}}<br>
+        Stock: {{product.stock}}<br>
+        Category: {{product.category}}<br>
+        <button onclick="addToCart('{{product._id}}')">Add to Cart</button>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        function addToCart(productId) {
+            fetch(`/api/carts/${currentUserCartId}/products/${productId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ quantity: 1 })
+            }).then(response => response.json())
+              .then(data => console.log(data))
+              .catch(error => console.error('Error:', error));
+        }
+    </script>
+</body>
+</html>

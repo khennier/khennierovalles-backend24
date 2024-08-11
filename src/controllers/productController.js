@@ -1,76 +1,70 @@
-import path from 'path';
-import { readFile, writeFile } from '../utils/fileUtils.js';
+import Product from '../models/Product.js';
 
-const productFilePath = path.join(process.cwd(), '/src/data/products.json');
+export const getProducts = async (req, res) => {
+    try {
+        const { page = 1, limit = 10, category, status, sort } = req.query;
 
-export const getProducts = (req, res) => {
-    readFile(productFilePath, (err, products) => {
-        if (err) {
-            console.error(`Failed to read products data at getProducts: ${err.message}`);
-            return res.status(500).json({ error: 'Failed to read products data' });
-        }
-        res.json(products);
-    });
+        const query = {};
+        if (category) query.category = category;
+        if (status) query.status = status === 'true';
+
+        const options = {
+            page: parseInt(page, 10),
+            limit: parseInt(limit, 10),
+            sort: sort ? { price: sort === 'asc' ? 1 : -1 } : {},
+        };
+
+        const result = await Product.paginate(query, options);
+
+        const response = {
+            status: 'success',
+            payload: result.docs,
+            totalPages: result.totalPages,
+            prevPage: result.prevPage,
+            nextPage: result.nextPage,
+            page: result.page,
+            hasPrevPage: result.hasPrevPage,
+            hasNextPage: result.hasNextPage,
+            prevLink: result.hasPrevPage ? `/api/products?page=${result.prevPage}` : null,
+            nextLink: result.hasNextPage ? `/api/products?page=${result.nextPage}` : null,
+        };
+
+        res.json(response);
+    } catch (err) {
+        console.error('Failed to fetch products:', err.message);
+        res.status(500).json({ status: 'error', message: 'Failed to fetch products' });
+    }
 };
 
-export const addProduct = (product, io) => {
-    readFile(productFilePath, (err, products) => {
-        if (err) {
-            console.error(`Failed to read products data at addProduct: ${err.message}`);
-            return;
-        }
-        if (products.some(p => p.code === product.code)) {
+export const addProduct = async (product, io) => {
+    try {
+        const existingProduct = await Product.findOne({ code: product.code });
+        if (existingProduct) {
             console.error(`Product with code ${product.code} already exists.`);
             return;
         }
-        const newId = products.length ? products[products.length - 1].id + 1 : 1;
-        const newProduct = { id: newId, ...product, status: true, thumbnails: ['S/N'] };
-        products.push(newProduct);
-        writeFile(productFilePath, products, (err) => {
-            if (err) {
-                console.error(`Failed to save new product at addProduct: ${err.message}`);
-                return;
-            }
-            io.emit('updateProducts', newProduct);
-        });
-    });
+        const newProduct = new Product(product);
+        await newProduct.save();
+        io.emit('updateProducts', newProduct);
+    } catch (err) {
+        console.error('Failed to add product:', err.message);
+    }
 };
 
-export const deleteProduct = (productId, io) => {
-    readFile(productFilePath, (err, products) => {
-        if (err) {
-            console.error(`Failed to read products data at deleteProduct: ${err.message}`);
-            return;
-        }
-        const updatedProducts = products.filter(product => product.id !== parseInt(productId));
-        writeFile(productFilePath, updatedProducts, (err) => {
-            if (err) {
-                console.error(`Failed to delete product at deleteProduct: ${err.message}`);
-                return;
-            }
-            io.emit('removeProduct', productId);
-        });
-    });
+export const deleteProduct = async (productId, io) => {
+    try {
+        await Product.findByIdAndDelete(productId);
+        io.emit('removeProduct', productId);
+    } catch (err) {
+        console.error('Failed to delete product:', err.message);
+    }
 };
 
-export const updateProduct = (productId, updatedProduct, io) => {
-    readFile(productFilePath, (err, products) => {
-        if (err) {
-            console.error(`Failed to read products data at updateProduct: ${err.message}`);
-            return;
-        }
-        const productIndex = products.findIndex(product => product.id === parseInt(productId));
-        if (productIndex === -1) {
-            console.error(`Product not found: ${productId}`);
-            return;
-        }
-        products[productIndex] = { ...products[productIndex], ...updatedProduct };
-        writeFile(productFilePath, products, (err) => {
-            if (err) {
-                console.error(`Failed to update product at updateProduct: ${err.message}`);
-                return;
-            }
-            io.emit('updateProducts', products[productIndex]);
-        });
-    });
+export const updateProduct = async (productId, updatedProduct, io) => {
+    try {
+        const product = await Product.findByIdAndUpdate(productId, updatedProduct, { new: true });
+        io.emit('updateProducts', product);
+    } catch (err) {
+        console.error('Failed to update product:', err.message);
+    }
 };

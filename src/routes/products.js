@@ -1,10 +1,20 @@
-import { Router } from 'express';
-import { getProducts, addProduct, deleteProduct } from '../controllers/productController.js';
+import express from 'express';
+import { getProducts, addProduct, deleteProduct, updateProduct } from '../controllers/productController.js';
 
-const router = Router();
+const router = express.Router();
 
 router.get('/', getProducts);
-router.post('/', addProduct);
-router.delete('/:id', deleteProduct);
+router.post('/', (req, res) => {
+    addProduct(req.body, req.app.get('socketio'));
+    res.redirect('/');
+});
+router.delete('/:id', (req, res) => {
+    deleteProduct(req.params.id, req.app.get('socketio'));
+    res.redirect('/');
+});
+router.put('/:id', (req, res) => {
+    updateProduct(req.params.id, req.body, req.app.get('socketio'));
+    res.redirect('/');
+});
 
 export default router;

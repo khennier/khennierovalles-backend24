@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cart</title>
+</head>
+<body>
+    <h1>Your Cart</h1>
+    <ul>
+        {{#each cart.products}}
+            <li>
+                <strong>{{this.productId.title}}</strong> - {{this.quantity}} x {{this.productId.price}}<br>
+                <button onclick="removeFromCart('{{this.productId._id}}')">Remove</button>
+                <button onclick="updateQuantity('{{this.productId._id}}', 1)">+1</button>
+                <button onclick="updateQuantity('{{this.productId._id}}', -1)">-1</button>
+            </li>
+        {{/each}}
+    </ul>
+
+    <button onclick="clearCart()">Clear Cart</button>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        function removeFromCart(productId) {
+            fetch(`/api/carts/${currentUserCartId}/products/${productId}`, {
+                method: 'DELETE'
+            }).then(response => response.json())
+              .then(data => console.log(data))
+              .catch(error => console.error('Error:', error));
+        }
+
+        function updateQuantity(productId, change) {
+            fetch(`/api/carts/${currentUserCartId}/products/${productId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ quantity: change })
+            }).then(response => response.json())
+              .then(data => console.log(data))
+              .catch(error => console.error('Error:', error));
+        }
+
+        function clearCart() {
+            fetch(`/api/carts/${currentUserCartId}`, {
+                method: 'DELETE'
+            }).then(response => response.json())
+              .then(data => console.log(data))
+              .catch(error => console.error('Error:', error));
+        }
+    </script>
+</body>
+</html>

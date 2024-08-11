@@ -1,9 +1,10 @@
 import express from 'express';
-import { renderHome, renderRealTimeProducts } from '../controllers/viewsController.js';
+import { renderHome, renderProductDetails, renderCart } from '../controllers/viewsController.js';
 
 const router = express.Router();
 
 router.get('/', renderHome);
-router.get('/realtimeproducts', renderRealTimeProducts);
+router.get('/products/:pid', renderProductDetails);
+router.get('/carts/:cid', renderCart);
 
 export default router;

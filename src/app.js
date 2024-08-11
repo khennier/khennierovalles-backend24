@@ -7,9 +7,13 @@ import cartRoutes from './routes/carts.js';
 import productRoutes from './routes/products.js';
 import { setupSockets } from './sockets/sockets.js';
 import viewRoutes from './routes/views.router.js';
+import connectDB from './config/mongoConfig.js';
 
 const app = express();
 const PORT = 8080;
+
+// Conectar a MongoDB
+connectDB();
 
 const server = http.createServer(app);
 const io = new SocketIO(server);
@@ -20,7 +24,11 @@ const hbs = create({
     extname: '.handlebars',
     defaultLayout: 'main',
     layoutsDir: path.join(process.cwd(), 'src/views/layouts'),
-    partialsDir: path.join(process.cwd(), 'src/views/partials')
+    partialsDir: path.join(process.cwd(), 'src/views/partials'),
+    runtimeOptions: {
+        allowProtoPropertiesByDefault: true,
+        allowProtoMethodsByDefault: true
+    }
 });
 
 app.engine('.handlebars', hbs.engine);

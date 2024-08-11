@@ -9,16 +9,33 @@
     <h1>{{title}}</h1>
     <ul id="product-list">
         {{#each products}}
-            <li data-id="{{this.id}}">
+            <li data-id="{{this._id}}">
                 <strong>{{this.title}}</strong> - {{this.price}}<br>
                 {{this.description}}<br>
                 Code: {{this.code}}<br>
                 Status: {{this.status}}<br>
                 Stock: {{this.stock}}<br>
                 Category: {{this.category}}<br>
+                <a href="/products/{{this._id}}">View Details</a>
+                <button onclick="addToCart('{{this._id}}')">Add to Cart</button>
             </li>
         {{/each}}
     </ul>
+
+    <div id="pagination">
+        {{#if hasPrevPage}}
+            <a href="{{prevLink}}">Previous</a>
+        {{/if}}
+        Page {{page}} of {{totalPages}}
+        {{#if hasNextPage}}
+            <a href="{{nextLink}}">Next</a>
+        {{/if}}
+    </div>
+
+    <script>
+        // Pasar el ID del carrito desde el servidor a la vista
+        const currentUserCartId = "{{cartId}}";
+    </script>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
@@ -27,7 +44,7 @@
 
             socket.on('updateProducts', (product) => {
                 const productList = document.getElementById('product-list');
-                let productItem = document.querySelector(`li[data-id='${product.id}']`);
+                let productItem = document.querySelector(`li[data-id='${product._id}']`);
                 if (productItem) {
                     productItem.innerHTML = `
                         <strong>${product.title}</strong> - ${product.price}<br>
@@ -36,10 +53,12 @@
                         Status: ${product.status}<br>
                         Stock: ${product.stock}<br>
                         Category: ${product.category}<br>
+                        <a href="/products/${product._id}">View Details</a>
+                        <button onclick="addToCart('${product._id}')">Add to Cart</button>
                     `;
                 } else {
                     const newProduct = document.createElement('li');
-                    newProduct.dataset.id = product.id;
+                    newProduct.dataset.id = product._id;
                     newProduct.innerHTML = `
                         <strong>${product.title}</strong> - ${product.price}<br>
                         ${product.description}<br>
@@ -47,6 +66,8 @@
                         Status: ${product.status}<br>
                         Stock: ${product.stock}<br>
                         Category: ${product.category}<br>
+                        <a href="/products/${product._id}">View Details</a>
+                        <button onclick="addToCart('${product._id}')">Add to Cart</button>
                     `;
                     productList.appendChild(newProduct);
                 }
@@ -60,6 +81,36 @@
                 }
             });
         });
+
+function addToCart(productId) {
+    const currentUserCartId = "{{cartId}}"; // Asegúrate de que este ID sea correcto
+    const url = `/api/carts/${currentUserCartId}/products/${productId}`;
+
+    fetch(url, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ quantity: 1 })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.status === 'success') {
+            console.log('Product added to cart:', data);
+            alert('Product added to cart successfully!');
+        } else {
+            console.log('Failed to add product to cart:', data);
+            alert('Failed to add product to cart');
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
     </script>
 </body>
 </html>

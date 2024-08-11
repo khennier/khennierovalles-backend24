@@ -1,15 +1,1 @@
-[
-  {
-    "id": 1,
-    "title": "Prueba",
-    "description": "Prueba Description pruebaaaaa pelotudio",
-    "code": "1",
-    "price": "120",
-    "status": true,
-    "stock": "10",
-    "category": "PruebaCategory",
-    "thumbnails": [
-      "S/N"
-    ]
-  }
-]
+[]

@@ -9,15 +9,15 @@
     <h1>{{title}}</h1>
     <ul id="product-list">
         {{#each products}}
-            <li data-id="{{this.id}}">
+            <li data-id="{{this._id}}">
                 <strong>{{this.title}}</strong> - {{this.price}}<br>
                 {{this.description}}<br>
                 Code: {{this.code}}<br>
                 Status: {{this.status}}<br>
                 Stock: {{this.stock}}<br>
                 Category: {{this.category}}<br>
-                <button onclick="fillUpdateForm({{this.id}}, '{{this.title}}', '{{this.description}}', '{{this.code}}', {{this.price}}, {{this.stock}}, '{{this.category}}')">Update</button>
-                <button onclick="deleteProduct({{this.id}})">Delete</button>
+                <button onclick="fillUpdateForm('{{this._id}}', '{{this.title}}', '{{this.description}}', '{{this.code}}', {{this.price}}, {{this.stock}}, '{{this.category}}')">Update</button>
+                <button onclick="deleteProduct('{{this._id}}')">Delete</button>
             </li>
         {{/each}}
     </ul>
@@ -50,7 +50,7 @@
 
             socket.on('updateProducts', (product) => {
                 const productList = document.getElementById('product-list');
-                let productItem = document.querySelector(`li[data-id='${product.id}']`);
+                let productItem = document.querySelector(`li[data-id='${product._id}']`);
                 if (productItem) {
                     productItem.innerHTML = `
                         <strong>${product.title}</strong> - ${product.price}<br>
@@ -59,12 +59,12 @@
                         Status: ${product.status}<br>
                         Stock: ${product.stock}<br>
                         Category: ${product.category}<br>
-                        <button onclick="fillUpdateForm(${product.id}, '${product.title}', '${product.description}', '${product.code}', ${product.price}, ${product.stock}, '${product.category}')">Update</button>
-                        <button onclick="deleteProduct(${product.id})">Delete</button>
+                        <button onclick="fillUpdateForm('${product._id}', '${product.title}', '${product.description}', '${product.code}', ${product.price}, ${product.stock}, '${product.category}')">Update</button>
+                        <button onclick="deleteProduct('${product._id}')">Delete</button>
                     `;
                 } else {
                     const newProduct = document.createElement('li');
-                    newProduct.dataset.id = product.id;
+                    newProduct.dataset.id = product._id;
                     newProduct.innerHTML = `
                         <strong>${product.title}</strong> - ${product.price}<br>
                         ${product.description}<br>
@@ -72,8 +72,8 @@
                         Status: ${product.status}<br>
                         Stock: ${product.stock}<br>
                         Category: ${product.category}<br>
-                        <button onclick="fillUpdateForm(${product.id}, '${product.title}', '${product.description}', '${product.code}', ${product.price}, ${product.stock}, '${product.category}')">Update</button>
-                        <button onclick="deleteProduct(${product.id})">Delete</button>
+                        <button onclick="fillUpdateForm('${product._id}', '${product.title}', '${product.description}', '${product.code}', ${product.price}, ${product.stock}, '${product.category}')">Update</button>
+                        <button onclick="deleteProduct('${product._id}')">Delete</button>
                     `;
                     productList.appendChild(newProduct);
                 }

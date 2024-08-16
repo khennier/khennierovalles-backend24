@@ -8,6 +8,7 @@ import productRoutes from './routes/products.js';
 import { setupSockets } from './sockets/sockets.js';
 import viewRoutes from './routes/views.router.js';
 import connectDB from './config/mongoConfig.js';
+import session from 'express-session';
 
 const app = express();
 const PORT = 8080;
@@ -35,10 +36,19 @@ app.engine('.handlebars', hbs.engine);
 app.set('view engine', '.handlebars');
 app.set('views', path.join(process.cwd(), 'src/views'));
 
+// Configuración de la sesión
+app.use(session({
+    secret: 'Backend', 
+    resave: false, 
+    saveUninitialized: true, 
+    cookie: { secure: false } 
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use(express.static(path.join(process.cwd(), 'src/public')));
+
 
 app.use('/api/carts', cartRoutes);
 app.use('/api/products', productRoutes);

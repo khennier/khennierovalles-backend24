@@ -1,6 +1,5 @@
 import Product from '../models/Product.js';
 import Cart from '../models/cart.js';
-
 export const renderHome = async (req, res) => {
     try {
         const { page = 1, limit = 10, category, status, sort } = req.query;
@@ -17,7 +16,24 @@ export const renderHome = async (req, res) => {
 
         const result = await Product.paginate(query, options);
 
-        const response = {
+        // Verificar si el carrito ya existe en la sesión
+        let cart;
+        if (req.session.cartId) {
+            cart = await Cart.findById(req.session.cartId);
+            if (!cart) {
+                // Si no se encuentra el carrito en la base de datos, creamos uno nuevo
+                cart = new Cart({ products: [] });
+                await cart.save();
+                req.session.cartId = cart._id; // Guardar el cartId en la sesión
+            }
+        } else {
+            // Si no existe cartId en la sesión, creamos un nuevo carrito
+            cart = new Cart({ products: [] });
+            await cart.save();
+            req.session.cartId = cart._id; // Guardar el cartId en la sesión
+        }
+
+        res.render('home', {
             title: 'Home Page',
             products: result.docs,
             totalPages: result.totalPages,
@@ -28,15 +44,13 @@ export const renderHome = async (req, res) => {
             hasNextPage: result.hasNextPage,
             prevLink: result.hasPrevPage ? `/products?page=${result.prevPage}` : null,
             nextLink: result.hasNextPage ? `/products?page=${result.nextPage}` : null,
-        };
-
-        res.render('home', response);
+            cartId: cart._id // Pasar el cartId a la vista
+        });
     } catch (err) {
         console.error('Failed to fetch products:', err.message);
         res.status(500).json({ status: 'error', message: 'Failed to fetch products' });
     }
 };
-
 export const renderProductDetails = async (req, res) => {
     try {
         const product = await Product.findById(req.params.pid);

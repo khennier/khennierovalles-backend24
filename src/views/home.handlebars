@@ -32,10 +32,11 @@
         {{/if}}
     </div>
 
-    <script>
-        // Pasar el ID del carrito desde el servidor a la vista
-        const currentUserCartId = "{{cartId}}";
-    </script>
+<script>
+    const currentUserCartId = "{{cartId}}"; 
+    console.log('Cart ID:', currentUserCartId);  
+</script>
+
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
@@ -83,8 +84,10 @@
         });
 
 function addToCart(productId) {
-    const currentUserCartId = "{{cartId}}"; // Asegúrate de que este ID sea correcto
+    const currentUserCartId = "{{cartId}}"; 
     const url = `/api/carts/${currentUserCartId}/products/${productId}`;
+    
+    console.log('request url', url)
 
     fetch(url, {
         method: 'PUT',

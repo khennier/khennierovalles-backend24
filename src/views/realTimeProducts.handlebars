@@ -47,6 +47,9 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const socket = io();
+                socket.on('connect', () => {
+                    console.log('Conectado al servidor WebSocket');
+                    });
 
             socket.on('updateProducts', (product) => {
                 const productList = document.getElementById('product-list');

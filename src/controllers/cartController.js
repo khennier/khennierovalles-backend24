@@ -15,13 +15,12 @@ export const createCart = async (req, res) => {
 };
 
 // Agregar produccto a carrito
-
 export const addProductToCart = async (req, res) => {
     const { cid, pid } = req.params;
     const { quantity } = req.body;
 
     try {
-        const cart = await Cart.findById(cid);
+        let cart = await Cart.findById(cid);
         if (!cart) {
             return res.status(404).json({ status: 'error', message: 'Cart not found' });
         }
@@ -31,10 +30,14 @@ export const addProductToCart = async (req, res) => {
             return res.status(404).json({ status: 'error', message: 'Product not found' });
         }
 
+        // Verifica si el producto ya está en el carrito
         const existingProduct = cart.products.find(p => p.productId.toString() === pid);
+
         if (existingProduct) {
-            existingProduct.quantity += quantity; // Actualizar la cantidad si el producto ya está en el carrito
+            // Si el producto ya está en el carrito, incrementa la cantidad
+            existingProduct.quantity += quantity;
         } else {
+            // Si el producto no está en el carrito, agréguelo
             cart.products.push({ productId: pid, quantity });
         }
 

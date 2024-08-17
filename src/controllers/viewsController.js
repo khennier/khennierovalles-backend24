@@ -75,5 +75,10 @@ export const renderCart = async (req, res) => {
         console.error('Failed to fetch cart:', err.message);
         res.status(500).json({ status: 'error', message: 'Failed to fetch cart' });
     }
+    
+};
+export const renderRealTimeProducts = (req, res) => {
+    // Renderiza la vista realtimeproducts.handlebars
+    res.render('realtimeproducts', { title: 'Real Time Products' });
 };
 

@@ -38,7 +38,8 @@
 </script>
 
 
-    <script src="/socket.io/socket.io.js"></script>
+    <script src="/socket.io/socket.io.js">
+    </script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const socket = io();
@@ -83,14 +84,16 @@
             });
         });
 
+
+//Agregar al carrito function
+
+
 function addToCart(productId) {
-    const currentUserCartId = "{{cartId}}"; 
+    const currentUserCartId = "{{cartId}}";  
     const url = `/api/carts/${currentUserCartId}/products/${productId}`;
-    
-    console.log('request url', url)
 
     fetch(url, {
-        method: 'PUT',
+        method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
@@ -103,16 +106,11 @@ function addToCart(productId) {
         return response.json();
     })
     .then(data => {
-        if (data.status === 'success') {
-            console.log('Product added to cart:', data);
-            alert('Product added to cart successfully!');
-        } else {
-            console.log('Failed to add product to cart:', data);
-            alert('Failed to add product to cart');
-        }
+        console.log('Product added to cart:', data.cart);
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => console.error('Errorrr:', error));
 }
+
 
     </script>
 </body>

@@ -66,19 +66,27 @@ export const renderProductDetails = async (req, res) => {
 
 export const renderCart = async (req, res) => {
     try {
-        const cart = await Cart.findById(req.params.cid).populate('products.productId');
+        const { cid } = req.params;
+
+        // Encuentra el carrito y popula los productos
+        const cart = await Cart.findById(cid).populate('products.productId');
+
         if (!cart) {
             return res.status(404).json({ status: 'error', message: 'Cart not found' });
         }
+
         res.render('cart', { title: 'Your Cart', cart });
     } catch (err) {
-        console.error('Failed to fetch cart:', err.message);
-        res.status(500).json({ status: 'error', message: 'Failed to fetch cart' });
+        console.error('Failed to render cart:', err.message);
+        res.status(500).json({ status: 'error', message: 'Failed to render cart' });
     }
-    
 };
-export const renderRealTimeProducts = (req, res) => {
-    // Renderiza la vista realtimeproducts.handlebars
-    res.render('realtimeproducts', { title: 'Real Time Products' });
+export const renderRealTimeProducts = async (req, res) => {
+    try {
+        const products = await Product.find().lean(); // Obtener todos los productos de la base de datos
+        res.render('realTimeProducts', { title: 'Real-Time Products', products });
+    } catch (err) {
+        console.error('Failed to fetch products:', err.message);
+        res.status(500).json({ status: 'error', message: 'Failed to fetch products' });
+    }
 };
-

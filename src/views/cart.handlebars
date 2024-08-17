@@ -4,31 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cart</title>
+    <link rel="stylesheet" href="/src/public/styles.css">
 </head>
 <body>
-    <h1>Your Cart</h1>
-    <ul>
-        {{#each cart.products}}
-            <li>
-                <strong>{{this.productId.title}}</strong> - {{this.quantity}} x {{this.productId.price}}<br>
-                <button onclick="removeFromCart('{{this.productId._id}}')">Remove</button>
-                <button onclick="updateQuantity('{{this.productId._id}}', 1)">+1</button>
-                <button onclick="updateQuantity('{{this.productId._id}}', -1)">-1</button>
-            </li>
-        {{/each}}
-    </ul>
-
-    <button onclick="clearCart()">Clear Cart</button>
+    <div class="container">
+        <h1>Your Cart</h1>
+        <ul id="cart-list">
+            {{#each cart.products}}
+                <li data-id="{{this.productId._id}}">
+                    <div class="product-info">
+                        <div class="product-title">{{this.productId.title}}</div>
+                        <div class="product-price">$ {{this.productId.price}} x {{this.quantity}} = $ {{multiply this.productId.price this.quantity}}</div>
+                        <div class="product-actions">
+                            <button onclick="updateQuantity('{{this.productId._id}}', 1)">+1</button>
+                            <button onclick="updateQuantity('{{this.productId._id}}', -1)">-1</button>
+                            <button class="clear-button" onclick="removeFromCart('{{this.productId._id}}')">Remove</button>
+                        </div>
+                    </div>
+                </li>
+            {{/each}}
+        </ul>
+        <h2>Total: $ <span id="total-amount">{{calculateTotal cart.products}}</span></h2>
+        <button onclick="clearCart()">Clear Cart</button>
+    </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        function removeFromCart(productId) {
-            fetch(`/api/carts/${currentUserCartId}/products/${productId}`, {
-                method: 'DELETE'
-            }).then(response => response.json())
-              .then(data => console.log(data))
-              .catch(error => console.error('Error:', error));
-        }
+        const currentUserCartId = "{{cart._id}}";
 
         function updateQuantity(productId, change) {
             fetch(`/api/carts/${currentUserCartId}/products/${productId}`, {
@@ -37,17 +39,37 @@
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ quantity: change })
-            }).then(response => response.json())
-              .then(data => console.log(data))
-              .catch(error => console.error('Error:', error));
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                location.reload(); // Recargar la página para actualizar la vista
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function removeFromCart(productId) {
+            fetch(`/api/carts/${currentUserCartId}/products/${productId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                location.reload(); // Recargar la página para actualizar la vista
+            })
+            .catch(error => console.error('Error:', error));
         }
 
         function clearCart() {
             fetch(`/api/carts/${currentUserCartId}`, {
                 method: 'DELETE'
-            }).then(response => response.json())
-              .then(data => console.log(data))
-              .catch(error => console.error('Error:', error));
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                location.reload(); // Recargar la página para actualizar la vista
+            })
+            .catch(error => console.error('Error:', error));
         }
     </script>
 </body>

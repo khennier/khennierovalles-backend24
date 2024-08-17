@@ -26,6 +26,14 @@ const hbs = create({
     defaultLayout: 'main',
     layoutsDir: path.join(process.cwd(), 'src/views/layouts'),
     partialsDir: path.join(process.cwd(), 'src/views/partials'),
+    helpers: {
+        multiply: (a, b) => a * b,
+        calculateTotal: (products) => {
+            return products.reduce((total, item) => {
+                return total + item.productId.price * item.quantity;
+            }, 0).toFixed(2);
+        }
+    },
     runtimeOptions: {
         allowProtoPropertiesByDefault: true,
         allowProtoMethodsByDefault: true

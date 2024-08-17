@@ -4,44 +4,74 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{title}}</title>
+    <link rel="stylesheet" href="/src/public/styles.css"> 
+    <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
-    <h1>{{title}}</h1>
-    <ul id="product-list">
-        {{#each products}}
-            <li data-id="{{this._id}}">
-                <strong>{{this.title}}</strong> - {{this.price}}<br>
-                {{this.description}}<br>
-                Code: {{this.code}}<br>
-                Status: {{this.status}}<br>
-                Stock: {{this.stock}}<br>
-                Category: {{this.category}}<br>
-                <a href="/products/{{this._id}}">View Details</a>
-                <button onclick="addToCart('{{this._id}}')">Add to Cart</button>
-            </li>
-        {{/each}}
-    </ul>
+    <div class="container">
+        <h1>{{title}}</h1>
 
-    <div id="pagination">
-        {{#if hasPrevPage}}
-            <a href="{{prevLink}}">Previous</a>
-        {{/if}}
-        Page {{page}} of {{totalPages}}
-        {{#if hasNextPage}}
-            <a href="{{nextLink}}">Next</a>
-        {{/if}}
+        <div class="cart-button-container" style="position: relative; display: inline-block;">
+            <button onclick="goToCart()">Ir al carrito</button>
+            <span id="cart-count" class="cart-count">0</span>
+        </div>
+
+        <ul id="product-list">
+            {{#each products}}
+                <li data-id="{{this._id}}">
+                    <div class="product-info">
+                        <div class="product-title">{{this.title}}</div>
+                        <div class="product-price">$ {{this.price}}</div>
+                        <div class="product-details">{{this.description}}</div>
+                        <div class="product-meta">Code: {{this.code}} | Status: {{#if this.status}}Available{{else}}Out of Stock{{/if}} | Stock: {{this.stock}} | Category: {{this.category}}</div>
+                    </div>
+                    <button onclick="addToCart('{{this._id}}')">Add to Cart</button>
+                    <a href="/products/{{this._id}}" class="details-link">View Details</a>
+                </li>
+            {{/each}}
+        </ul>
+
+        <div id="pagination">
+            {{#if hasPrevPage}}
+                <a href="{{prevLink}}">Previous</a>
+            {{/if}}
+            Page {{page}} of {{totalPages}}
+            {{#if hasNextPage}}
+                <a href="{{nextLink}}">Next</a>
+            {{/if}}
+        </div>
     </div>
 
-<script>
-    const currentUserCartId = "{{cartId}}"; 
-    console.log('Cart ID:', currentUserCartId);  
-</script>
-
-
-    <script src="/socket.io/socket.io.js">
-    </script>
     <script>
+        const currentUserCartId = "{{cartId}}"; 
+
+        function goToCart() {
+            window.location.href = `/carts/${currentUserCartId}`;
+        }
+
+        // Función para actualizar el contador del carrito
+    function updateCartCount() {
+    fetch(`/api/carts/${currentUserCartId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.products && Array.isArray(data.products)) {
+                const cartCount = data.products.reduce((acc, item) => acc + item.quantity, 0);
+                document.getElementById('cart-count').textContent = cartCount;
+            } else {
+                console.error('Failed to fetch cart data:', data);
+                document.getElementById('cart-count').textContent = '0';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('cart-count').textContent = '0';
+        });
+}
+
+
         document.addEventListener('DOMContentLoaded', () => {
+            updateCartCount(); // Actualizar el contador al cargar la página
+
             const socket = io();
 
             socket.on('updateProducts', (product) => {
@@ -49,27 +79,27 @@
                 let productItem = document.querySelector(`li[data-id='${product._id}']`);
                 if (productItem) {
                     productItem.innerHTML = `
-                        <strong>${product.title}</strong> - ${product.price}<br>
-                        ${product.description}<br>
-                        Code: ${product.code}<br>
-                        Status: ${product.status}<br>
-                        Stock: ${product.stock}<br>
-                        Category: ${product.category}<br>
-                        <a href="/products/${product._id}">View Details</a>
+                        <div class="product-info">
+                            <div class="product-title">${product.title}</div>
+                            <div class="product-price">$${product.price}</div>
+                            <div class="product-details">${product.description}</div>
+                            <div class="product-meta">Code: ${product.code} | Status: ${product.status ? 'Available' : 'Out of Stock'} | Stock: ${product.stock} | Category: ${product.category}</div>
+                        </div>
                         <button onclick="addToCart('${product._id}')">Add to Cart</button>
+                        <a href="/products/${product._id}" class="details-link">View Details</a>
                     `;
                 } else {
                     const newProduct = document.createElement('li');
                     newProduct.dataset.id = product._id;
                     newProduct.innerHTML = `
-                        <strong>${product.title}</strong> - ${product.price}<br>
-                        ${product.description}<br>
-                        Code: ${product.code}<br>
-                        Status: ${product.status}<br>
-                        Stock: ${product.stock}<br>
-                        Category: ${product.category}<br>
-                        <a href="/products/${product._id}">View Details</a>
+                        <div class="product-info">
+                            <div class="product-title">${product.title}</div>
+                            <div class="product-price">$${product.price}</div>
+                            <div class="product-details">${product.description}</div>
+                            <div class="product-meta">Code: ${product.code} | Status: ${product.status ? 'Available' : 'Out of Stock'} | Stock: ${product.stock} | Category: ${product.category}</div>
+                        </div>
                         <button onclick="addToCart('${product._id}')">Add to Cart</button>
+                        <a href="/products/${product._id}" class="details-link">View Details</a>
                     `;
                     productList.appendChild(newProduct);
                 }
@@ -84,34 +114,29 @@
             });
         });
 
+        //Agregar al carrito function
+        function addToCart(productId) {
+            const currentUserCartId = "{{cartId}}";  
+            const url = `/api/carts/${currentUserCartId}/products/${productId}`;
 
-//Agregar al carrito function
-
-
-function addToCart(productId) {
-    const currentUserCartId = "{{cartId}}";  
-    const url = `/api/carts/${currentUserCartId}/products/${productId}`;
-
-    fetch(url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ quantity: 1 })
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ quantity: 1 })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                updateCartCount(); // Actualizar el contador después de agregar un producto
+            })
+            .catch(error => console.error('Error:', error));
         }
-        return response.json();
-    })
-    .then(data => {
-        console.log('Product added to cart:', data.cart);
-    })
-    .catch(error => console.error('Errorrr:', error));
-}
-
-
     </script>
 </body>
 </html>

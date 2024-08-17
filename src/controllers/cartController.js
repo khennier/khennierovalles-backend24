@@ -88,25 +88,37 @@ export const updateCart = async (req, res) => {
 };
 
 // Actualizar la cantidad de un producto en el carrito
-export const updateProductQuantityInCart = async (req, res) => {
+export const updateProductQuantity = async (req, res) => {
     const { cid, pid } = req.params;
     const { quantity } = req.body;
+
     try {
+        // Encuentra el carrito por ID
         const cart = await Cart.findById(cid);
         if (!cart) {
             return res.status(404).json({ status: 'error', message: 'Cart not found' });
         }
-        const product = cart.products.find(product => product.productId.toString() === pid);
-        if (product) {
-            product.quantity = quantity;
-            await cart.save();
-            res.json({ status: 'success', message: 'Product quantity updated in cart' });
-        } else {
-            res.status(404).json({ status: 'error', message: 'Product not found in cart' });
+
+        // Encuentra el producto dentro del carrito
+        const productInCart = cart.products.find(p => p.productId.toString() === pid);
+
+        if (!productInCart) {
+            return res.status(404).json({ status: 'error', message: 'Product not found in cart' });
         }
+
+        // Actualiza la cantidad del producto
+        productInCart.quantity += quantity;
+
+        // Si la cantidad es menor o igual a 0, elimina el producto del carrito
+        if (productInCart.quantity <= 0) {
+            cart.products = cart.products.filter(p => p.productId.toString() !== pid);
+        }
+
+        await cart.save();
+        res.json({ status: 'success', message: 'Product quantity updated', cart });
     } catch (err) {
-        console.error('Failed to update product quantity in cart:', err.message);
-        res.status(500).json({ status: 'error', message: 'Failed to update product quantity in cart' });
+        console.error('Failed to update product quantity:', err.message);
+        res.status(500).json({ status: 'error', message: 'Failed to update product quantity' });
     }
 };
 

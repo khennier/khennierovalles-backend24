@@ -4,79 +4,88 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{title}}</title>
+    <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
-    <h1>{{title}}</h1>
-    <ul id="product-list">
-        {{#each products}}
-            <li data-id="{{this._id}}">
-                <strong>{{this.title}}</strong> - {{this.price}}<br>
-                {{this.description}}<br>
-                Code: {{this.code}}<br>
-                Status: {{this.status}}<br>
-                Stock: {{this.stock}}<br>
-                Category: {{this.category}}<br>
-                <button onclick="fillUpdateForm('{{this._id}}', '{{this.title}}', '{{this.description}}', '{{this.code}}', {{this.price}}, {{this.stock}}, '{{this.category}}')">Update</button>
-                <button onclick="deleteProduct('{{this._id}}')">Delete</button>
-            </li>
-        {{/each}}
-    </ul>
+    <div class="container">
+        <h1>{{title}}</h1>
+        <ul id="product-list">
+            {{#if products.length}}
+                {{#each products}}
+                    <li data-id="{{this._id}}">
+                        <div class="product-info">
+                            <div class="product-title">{{this.title}}</div>
+                            <div class="product-price">$ {{this.price}}</div>
+                            <div class="product-details">{{this.description}}</div>
+                            <div class="product-meta">
+                                Code: {{this.code}} | 
+                                Status: {{#if this.status}}Available{{else}}Out of Stock{{/if}} | 
+                                Stock: {{this.stock}} | 
+                                Category: {{this.category}}
+                            </div>
+                        </div>
+                        <button onclick="fillUpdateForm('{{this._id}}', '{{this.title}}', '{{this.description}}', '{{this.code}}', {{this.price}}, {{this.stock}}, '{{this.category}}')">Update</button>
+                        <button class="clear-button" onclick="deleteProduct('{{this._id}}')">Delete</button>
+                    </li>
+                {{/each}}
+            {{else}}
+                <li>No products available</li>
+            {{/if}}
+        </ul>
 
-    <form id="product-form">
-        <input type="text" id="title" placeholder="Product Title" required>
-        <input type="text" id="description" placeholder="Product Description" required>
-        <input type="text" id="code" placeholder="Product Code" required>
-        <input type="number" id="price" placeholder="Product Price" required>
-        <input type="number" id="stock" placeholder="Product Stock" required>
-        <input type="text" id="category" placeholder="Product Category" required>
-        <button type="submit">Add Product</button>
-    </form>
+        <form id="product-form">
+            <input type="text" id="title" placeholder="Product Title" required>
+            <input type="text" id="description" placeholder="Product Description" required>
+            <input type="text" id="code" placeholder="Product Code" required>
+            <input type="number" id="price" placeholder="Product Price" required>
+            <input type="number" id="stock" placeholder="Product Stock" required>
+            <input type="text" id="category" placeholder="Product Category" required>
+            <button type="submit">Add Product</button>
+        </form>
 
-    <form id="update-form">
-        <input type="hidden" id="update-id">
-        <input type="text" id="update-title" placeholder="Product Title" required>
-        <input type="text" id="update-description" placeholder="Product Description" required>
-        <input type="text" id="update-code" placeholder="Product Code" required>
-        <input type="number" id="update-price" placeholder="Product Price" required>
-        <input type="number" id="update-stock" placeholder="Product Stock" required>
-        <input type="text" id="update-category" placeholder="Product Category" required>
-        <button type="submit">Update Product</button>
-    </form>
+        <form id="update-form" style="display:none;">
+            <input type="hidden" id="update-id">
+            <input type="text" id="update-title" placeholder="Product Title" required>
+            <input type="text" id="update-description" placeholder="Product Description" required>
+            <input type="text" id="update-code" placeholder="Product Code" required>
+            <input type="number" id="update-price" placeholder="Product Price" required>
+            <input type="number" id="update-stock" placeholder="Product Stock" required>
+            <input type="text" id="update-category" placeholder="Product Category" required>
+            <button type="submit">Update Product</button>
+        </form>
+    </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const socket = io();
-                socket.on('connect', () => {
-                    console.log('Conectado al servidor WebSocket');
-                    });
 
             socket.on('updateProducts', (product) => {
                 const productList = document.getElementById('product-list');
                 let productItem = document.querySelector(`li[data-id='${product._id}']`);
                 if (productItem) {
                     productItem.innerHTML = `
-                        <strong>${product.title}</strong> - ${product.price}<br>
-                        ${product.description}<br>
-                        Code: ${product.code}<br>
-                        Status: ${product.status}<br>
-                        Stock: ${product.stock}<br>
-                        Category: ${product.category}<br>
+                        <div class="product-info">
+                            <div class="product-title">${product.title}</div>
+                            <div class="product-price">$${product.price}</div>
+                            <div class="product-details">${product.description}</div>
+                            <div class="product-meta">Code: ${product.code} | Status: ${product.status ? 'Available' : 'Out of Stock'} | Stock: ${product.stock} | Category: ${product.category}</div>
+                        </div>
                         <button onclick="fillUpdateForm('${product._id}', '${product.title}', '${product.description}', '${product.code}', ${product.price}, ${product.stock}, '${product.category}')">Update</button>
-                        <button onclick="deleteProduct('${product._id}')">Delete</button>
+                        <button class="clear-button" onclick="deleteProduct('${product._id}')">Delete</button>
                     `;
                 } else {
                     const newProduct = document.createElement('li');
                     newProduct.dataset.id = product._id;
                     newProduct.innerHTML = `
-                        <strong>${product.title}</strong> - ${product.price}<br>
-                        ${product.description}<br>
-                        Code: ${product.code}<br>
-                        Status: ${product.status}<br>
-                        Stock: ${product.stock}<br>
-                        Category: ${product.category}<br>
+                        <div class="product-info">
+                            <div class="product-title">${product.title}</div>
+                            <div class="product-price">$${product.price}</div>
+                            <div class="product-details">${product.description}</div>
+                            <div class="product-meta">Code: ${product.code} | Status: ${product.status ? 'Available' : 'Out of Stock'} | Stock: ${product.stock} | Category: ${product.category}</div>
+                        </div>
                         <button onclick="fillUpdateForm('${product._id}', '${product.title}', '${product.description}', '${product.code}', ${product.price}, ${product.stock}, '${product.category}')">Update</button>
-                        <button onclick="deleteProduct('${product._id}')">Delete</button>
+                        <button class="clear-button" onclick="deleteProduct('${product._id}')">Delete</button>
                     `;
                     productList.appendChild(newProduct);
                 }
@@ -143,6 +152,7 @@
                 document.getElementById('update-price').value = price;
                 document.getElementById('update-stock').value = stock;
                 document.getElementById('update-category').value = category;
+                document.getElementById('update-form').style.display = 'block';
             }
 
             window.deleteProduct = (id) => {

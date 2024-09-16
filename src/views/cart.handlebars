@@ -9,23 +9,30 @@
 <body>
     <div class="container">
         <h1>Your Cart</h1>
+        
+        <!-- Verificar si el carrito tiene productos -->
+        {{#if cart.products.length}}
         <ul id="cart-list">
-            {{#each cart.products}}
-                <li data-id="{{this.productId._id}}">
-                    <div class="product-info">
-                        <div class="product-title">{{this.productId.title}}</div>
-                        <div class="product-price">$ {{this.productId.price}} x {{this.quantity}} = $ {{multiply this.productId.price this.quantity}}</div>
-                        <div class="product-actions">
-                            <button onclick="updateQuantity('{{this.productId._id}}', 1)">+1</button>
-                            <button onclick="updateQuantity('{{this.productId._id}}', -1)">-1</button>
-                            <button class="clear-button" onclick="removeFromCart('{{this.productId._id}}')">Remove</button>
-                        </div>
-                    </div>
-                </li>
-            {{/each}}
-        </ul>
+    {{#each cart.products}}
+        <li data-id="{{this.productId._id}}">
+            <div class="product-info">
+                <div class="product-title">{{this.productId.title}}</div>
+                <div class="product-price">$ {{this.productId.price}} x {{this.quantity}} = $ {{multiply this.productId.price this.quantity}}</div>
+                <div class="product-actions">
+                    <button onclick="updateQuantity('{{this.productId._id}}', 1)">+1</button>
+                    <button onclick="updateQuantity('{{this.productId._id}}', -1)">-1</button>
+                    <button class="clear-button" onclick="removeFromCart('{{this.productId._id}}')">Remove</button>
+                </div>
+            </div>
+        </li>
+    {{/each}}
+</ul>
+
         <h2>Total: $ <span id="total-amount">{{calculateTotal cart.products}}</span></h2>
         <button onclick="clearCart()">Clear Cart</button>
+        {{else}}
+        <p>Your cart is empty.</p>
+        {{/if}}
     </div>
 
     <script src="/socket.io/socket.io.js"></script>

@@ -131,6 +131,7 @@ form button:hover {
     background-color: #0088cc;
 }
 
+
 .cart-button-container {
     position: relative;
     display: inline-block;
@@ -151,3 +152,21 @@ form button:hover {
     align-items: center;
 }
 
+.button {
+    background-color: #007bff; /* Azul */
+    color: white; /* Texto en blanco */
+    border: none;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 5px 2px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+
+.button:hover {
+    background-color: #0056b3; /* Azul más oscuro al pasar el mouse */
+}

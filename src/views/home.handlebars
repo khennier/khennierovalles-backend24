@@ -4,136 +4,105 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{title}}</title>
-    <link rel="stylesheet" href="/src/public/styles.css"> 
-    <script src="/socket.io/socket.io.js"></script>
+    <link rel="stylesheet" href="/src/public/styles.css">
 </head>
 <body>
     <div class="container">
+        <!-- Mostrar mensaje de bienvenida y botón de logout si el usuario está autenticado -->
+        {{#if isAuthenticated}}
+        <p>Welcome back, {{user.first_name}}!</p>
+        <button onclick="logout()">Logout</button>
+
+        <!-- Mostrar el botón de acceso a /realtimeproducts si el usuario es ADMIN -->
+        {{#if isAdmin}}
+        <div class="admin-panel">
+            <a href="/realtimeproducts" class="button">Acceder a panel de ADMINISTRADOR</a>
+        </div>
+        {{/if}}
+
+        {{else}}
+        <!-- Mostrar botones de Login y Sign Up si el usuario no está autenticado -->
+        <div class="auth-buttons">
+            <a href="/login" class="button">Login</a>
+            <a href="/register" class="button">Sign Up</a>
+        </div>
+        {{/if}}
+
         <h1>{{title}}</h1>
 
-        <div class="cart-button-container" style="position: relative; display: inline-block;">
-            <button onclick="goToCart()">Ir al carrito</button>
-            <span id="cart-count" class="cart-count">0</span>
-        </div>
-
-        <ul id="product-list">
+        <!-- Mostrar los productos disponibles -->
+        <h2>Products:</h2>
+        <ul>
             {{#each products}}
-                <li data-id="{{this._id}}">
-                    <div class="product-info">
-                        <div class="product-title">{{this.title}}</div>
-                        <div class="product-price">$ {{this.price}}</div>
-                        <div class="product-details">{{this.description}}</div>
-                        <div class="product-meta">Code: {{this.code}} | Status: {{#if this.status}}Available{{else}}Out of Stock{{/if}} | Stock: {{this.stock}} | Category: {{this.category}}</div>
+            <li class="product-item">
+                <div class="product-info">
+                    <span class="product-title"><strong>{{this.name}}</strong></span>
+                    <p class="product-description">{{this.description}}</p>
+                    <p class="product-price">Price: ${{this.price}}</p>
+
+                    <!-- Mostrar botón "ADD TO CART" siempre, pero redirigir a login si no está autenticado -->
+                    <div class="add-to-cart">
+                        <input type="number" id="quantity-{{this._id}}" value="1" min="1" style="width: 50px;">
+                        <button onclick="addToCart('{{this._id}}', document.getElementById('quantity-{{this._id}}').value)">Add to Cart</button>
                     </div>
-                    <button onclick="addToCart('{{this._id}}')">Add to Cart</button>
-                    <a href="/products/{{this._id}}" class="details-link">View Details</a>
-                </li>
+                </div>
+            </li>
             {{/each}}
         </ul>
 
-        <div id="pagination">
+        <!-- Enlaces de paginación -->
+        <div class="pagination">
             {{#if hasPrevPage}}
-                <a href="{{prevLink}}">Previous</a>
+            <a href="{{prevLink}}">Previous</a>
             {{/if}}
-            Page {{page}} of {{totalPages}}
             {{#if hasNextPage}}
-                <a href="{{nextLink}}">Next</a>
+            <a href="{{nextLink}}">Next</a>
             {{/if}}
         </div>
+
+        <!-- Botón para ver el carrito, solo si el usuario está autenticado -->
+        {{#if isAuthenticated}}
+        <div class="cart-button-container">
+            <a href="/carts/{{cartId}}" class="button">Ver Carrito</a>
+        </div>
+        {{/if}}
     </div>
 
     <script>
-        const currentUserCartId = "{{cartId}}"; 
-
-        function goToCart() {
-            window.location.href = `/carts/${currentUserCartId}`;
+        // Función de logout
+        function logout() {
+            fetch('/api/auth/logout', {
+                method: 'POST'
+            })
+            .then(() => {
+                window.location.href = '/'; // Redirigir a la página principal
+            })
+            .catch(error => console.error('Error:', error));
         }
 
-        // Función para actualizar el contador del carrito
-    function updateCartCount() {
-    fetch(`/api/carts/${currentUserCartId}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.products && Array.isArray(data.products)) {
-                const cartCount = data.products.reduce((acc, item) => acc + item.quantity, 0);
-                document.getElementById('cart-count').textContent = cartCount;
-            } else {
-                console.error('Failed to fetch cart data:', data);
-                document.getElementById('cart-count').textContent = '0';
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            document.getElementById('cart-count').textContent = '0';
-        });
-}
-
-
-        document.addEventListener('DOMContentLoaded', () => {
-            updateCartCount(); // Actualizar el contador al cargar la página
-
-            const socket = io();
-
-            socket.on('updateProducts', (product) => {
-                const productList = document.getElementById('product-list');
-                let productItem = document.querySelector(`li[data-id='${product._id}']`);
-                if (productItem) {
-                    productItem.innerHTML = `
-                        <div class="product-info">
-                            <div class="product-title">${product.title}</div>
-                            <div class="product-price">$${product.price}</div>
-                            <div class="product-details">${product.description}</div>
-                            <div class="product-meta">Code: ${product.code} | Status: ${product.status ? 'Available' : 'Out of Stock'} | Stock: ${product.stock} | Category: ${product.category}</div>
-                        </div>
-                        <button onclick="addToCart('${product._id}')">Add to Cart</button>
-                        <a href="/products/${product._id}" class="details-link">View Details</a>
-                    `;
-                } else {
-                    const newProduct = document.createElement('li');
-                    newProduct.dataset.id = product._id;
-                    newProduct.innerHTML = `
-                        <div class="product-info">
-                            <div class="product-title">${product.title}</div>
-                            <div class="product-price">$${product.price}</div>
-                            <div class="product-details">${product.description}</div>
-                            <div class="product-meta">Code: ${product.code} | Status: ${product.status ? 'Available' : 'Out of Stock'} | Stock: ${product.stock} | Category: ${product.category}</div>
-                        </div>
-                        <button onclick="addToCart('${product._id}')">Add to Cart</button>
-                        <a href="/products/${product._id}" class="details-link">View Details</a>
-                    `;
-                    productList.appendChild(newProduct);
-                }
-            });
-
-            socket.on('removeProduct', (productId) => {
-                const productList = document.getElementById('product-list');
-                const productToRemove = document.querySelector(`li[data-id='${productId}']`);
-                if (productToRemove) {
-                    productList.removeChild(productToRemove);
-                }
-            });
-        });
-
-        //Agregar al carrito function
-        function addToCart(productId) {
-            const currentUserCartId = "{{cartId}}";  
-            const url = `/api/carts/${currentUserCartId}/products/${productId}`;
-
-            fetch(url, {
+        // Función de agregar al carrito
+        function addToCart(productId, quantity) {
+            fetch(`/api/carts/{{cartId}}/products/${productId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ quantity: 1 })
+                body: JSON.stringify({ quantity: parseInt(quantity) })
             })
             .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                if (response.status === 401) {
+                    // Redirigir a la página de login si el usuario no está autenticado
+                    window.location.href = '/login';
+                } else {
+                    return response.json();
                 }
-                return response.json();
             })
             .then(data => {
-                updateCartCount(); // Actualizar el contador después de agregar un producto
+                if (data && data.status === 'success') {
+                    alert('Producto añadido al carrito');
+                } else if (data) {
+                    alert('Error al añadir producto al carrito: ' + data.message);
+                }
             })
             .catch(error => console.error('Error:', error));
         }

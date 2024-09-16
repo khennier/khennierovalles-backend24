@@ -1,5 +1,6 @@
 import Product from '../models/Product.js';
 import Cart from '../models/cart.js';
+
 export const renderHome = async (req, res) => {
     try {
         const { page = 1, limit = 10, category, status, sort } = req.query;
@@ -16,77 +17,88 @@ export const renderHome = async (req, res) => {
 
         const result = await Product.paginate(query, options);
 
-        // Verificar si el carrito ya existe en la sesión
-        let cart;
-        if (req.session.cartId) {
-            cart = await Cart.findById(req.session.cartId);
-            if (!cart) {
-                // Si no se encuentra el carrito en la base de datos, creamos uno nuevo
-                cart = new Cart({ products: [] });
-                await cart.save();
-                req.session.cartId = cart._id; // Guardar el cartId en la sesión
-            }
-        } else {
-            // Si no existe cartId en la sesión, creamos un nuevo carrito
-            cart = new Cart({ products: [] });
-            await cart.save();
-            req.session.cartId = cart._id; // Guardar el cartId en la sesión
+        let cart = null;
+        if (req.user) {
+            cart = await Cart.findOne({ userId: req.user.id });
         }
 
+
         res.render('home', {
-            title: 'Home Page',
+            title: 'Pagina Principal',
             products: result.docs,
-            totalPages: result.totalPages,
-            prevPage: result.prevPage,
-            nextPage: result.nextPage,
-            page: result.page,
-            hasPrevPage: result.hasPrevPage,
-            hasNextPage: result.hasNextPage,
-            prevLink: result.hasPrevPage ? `/products?page=${result.prevPage}` : null,
-            nextLink: result.hasNextPage ? `/products?page=${result.nextPage}` : null,
-            cartId: cart._id // Pasar el cartId a la vista
+            cartId: cart ? cart._id : null,
+            user: req.user, 
+            isAdmin: req.user && req.user.role === 'ADMIN', 
+            isAuthenticated: !!req.user 
         });
     } catch (err) {
-        console.error('Failed to fetch products:', err.message);
-        res.status(500).json({ status: 'error', message: 'Failed to fetch products' });
+        console.error('Error al renderizar la página principal:', err.message);
+        res.status(500).json({ status: 'error', message: 'Error al renderizar la página principal' });
     }
 };
-export const renderProductDetails = async (req, res) => {
+
+export const renderRealTimeProducts = async (req, res) => {
     try {
-        const product = await Product.findById(req.params.pid);
-        if (!product) {
-            return res.status(404).json({ status: 'error', message: 'Product not found' });
-        }
-        res.render('productDetails', { title: 'Product Details', product });
+        // Obtener todos los productos de la base de datos
+        const products = await Product.find().lean(); // lean() para mejorar el rendimiento
+
+        // Renderizar la vista de productos en tiempo real
+        res.render('realTimeProducts', {
+            title: 'Real-Time Products',
+            products
+        });
     } catch (err) {
-        console.error('Failed to fetch product:', err.message);
-        res.status(500).json({ status: 'error', message: 'Failed to fetch product' });
+        console.error('Failed to fetch real-time products:', err.message);
+        res.status(500).json({ status: 'error', message: 'Failed to fetch real-time products' });
     }
 };
+
 
 export const renderCart = async (req, res) => {
     try {
-        const { cid } = req.params;
+        const { cid } = req.params; // Obtener el ID del carrito desde la URL
 
-        // Encuentra el carrito y popula los productos
-        const cart = await Cart.findById(cid).populate('products.productId');
+        // Encuentra el carrito por ID y popula los productos
+        const cart = await Cart.findById(cid).populate('products.productId').lean();
 
+        // Verificar si el carrito existe
         if (!cart) {
-            return res.status(404).json({ status: 'error', message: 'Cart not found' });
+            return res.status(404).json({ status: 'error', message: 'Carrito no encontrado' });
         }
 
-        res.render('cart', { title: 'Your Cart', cart });
+        // Renderizar la vista del carrito
+        res.render('cart', {
+            title: 'Tu Carrito',
+            cart
+        });
     } catch (err) {
-        console.error('Failed to render cart:', err.message);
-        res.status(500).json({ status: 'error', message: 'Failed to render cart' });
+        console.error('Error al renderizar el carrito:', err.message);
+        res.status(500).json({ status: 'error', message: 'Error al renderizar el carrito' });
     }
 };
-export const renderRealTimeProducts = async (req, res) => {
+
+
+export const renderProductDetails = async (req, res) => {
     try {
-        const products = await Product.find().lean(); // Obtener todos los productos de la base de datos
-        res.render('realTimeProducts', { title: 'Real-Time Products', products });
+        const productId = req.params.pid;
+
+        // Verificar si el productId es un ObjectId válido
+        if (!productId || !mongoose.Types.ObjectId.isValid(productId)) {
+            return res.status(400).json({ status: 'error', message: 'Invalid product ID' });
+        }
+
+        const product = await Product.findById(productId).lean();
+
+        if (!product) {
+            return res.status(404).json({ status: 'error', message: 'Product not found' });
+        }
+
+        res.render('productDetails', {
+            title: 'Product Details',
+            product: product
+        });
     } catch (err) {
-        console.error('Failed to fetch products:', err.message);
-        res.status(500).json({ status: 'error', message: 'Failed to fetch products' });
+        console.error('Failed to fetch product detailsssssss:', err.message);
+        res.status(500).json({ status: 'error', message: 'Failed to fetch product details' });
     }
 };

@@ -14,40 +14,39 @@ export const createCart = async (req, res) => {
     }
 };
 
-// Agregar produccto a carrito
-export const addProductToCart = async (req, res) => {
-    const { cid, pid } = req.params;
-    const { quantity } = req.body;
 
+export const addProductToCart = async (req, res) => {
     try {
+        const { cid, pid } = req.params; // Obtener el cartId y productId de los parámetros
+        const { quantity } = req.body;   // Obtener la cantidad del cuerpo de la solicitud
+
+        // Buscar el carrito por su ID
         let cart = await Cart.findById(cid);
         if (!cart) {
-            return res.status(404).json({ status: 'error', message: 'Cart not found' });
+            return res.status(404).json({ status: 'error', message: 'Carrito no encontrado' });
         }
 
-        const product = await Product.findById(pid);
-        if (!product) {
-            return res.status(404).json({ status: 'error', message: 'Product not found' });
-        }
-
-        // Verifica si el producto ya está en el carrito
-        const existingProduct = cart.products.find(p => p.productId.toString() === pid);
-
-        if (existingProduct) {
-            // Si el producto ya está en el carrito, incrementa la cantidad
-            existingProduct.quantity += quantity;
+        // Verificar si el producto ya está en el carrito
+        const productIndex = cart.products.findIndex(p => p.productId.toString() === pid);
+        if (productIndex >= 0) {
+            // Si el producto ya está en el carrito, incrementar la cantidad
+            cart.products[productIndex].quantity += quantity;
         } else {
-            // Si el producto no está en el carrito, agréguelo
+            // Si no está en el carrito, agregar el nuevo producto
             cart.products.push({ productId: pid, quantity });
         }
 
+        // Guardar el carrito actualizado
         await cart.save();
-        res.json({ status: 'success', message: 'Product added to cart', cart });
+
+        res.json({ status: 'success', message: 'Producto añadido al carrito' });
     } catch (err) {
-        console.error('Failed to add product to cart:', err.message);
-        res.status(500).json({ status: 'error', message: 'Failed to add product to cart' });
+        console.error('Error al añadir producto al carrito:', err.message);
+        res.status(500).json({ status: 'error', message: 'Error al añadir producto al carrito' });
     }
 };
+
+
 
 // Eliminar un producto específico del carrito
 export const deleteProductFromCart = async (req, res) => {

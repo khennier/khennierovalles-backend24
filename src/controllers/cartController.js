@@ -1,6 +1,9 @@
 import Cart from '../models/cart.js';
 import Product from '../models/Product.js';
+import Ticket from '../models/Ticket.js';
+import { v4 as uuidv4 } from 'uuid';  
 
+ 
 export const createCart = async (req, res) => {
     try {
         const newCart = new Cart({
@@ -140,15 +143,73 @@ export const clearCart = async (req, res) => {
 
 // Obtener los productos de un carrito específico con populate
 export const getCart = async (req, res) => {
-    const { cid } = req.params;
     try {
-        const cart = await Cart.findById(cid).populate('products.productId');
+        const cart = await Cart.findById(req.params.cid).populate('products.productId').lean();
+        
         if (!cart) {
-            return res.status(404).json({ status: 'error', message: 'Cart not found' });
+            return res.status(404).json({ error: 'Carrito no encontrado' });
         }
-        res.json(cart);
+
+        // Filtro para evitar productos con productId null
+        cart.products = cart.products.filter(item => item.productId !== null);
+
+        res.render('cart', { title: 'Your Cart', cart });
     } catch (err) {
-        console.error('Failed to fetch cart:', err.message);
-        res.status(500).json({ status: 'error', message: 'Failed to fetch cart' });
+        console.error('Error al obtener el carrito:', err);
+        res.status(500).json({ error: 'Error al obtener el carrito' });
+    }
+};
+
+
+
+export const purchaseCart = async (req, res) => {
+    try {
+        // Buscar el carrito por ID
+        const cart = await Cart.findById(req.params.cid).populate('products.productId');
+        if (!cart) {
+            return res.status(404).json({ error: 'Carrito no encontrado' });
+        }
+
+        let totalAmount = 0;
+        let productsNotPurchased = [];
+
+        // Verificar el stock de cada producto en el carrito
+        for (let item of cart.products) {
+            const product = item.productId;
+            if (product.stock >= item.quantity) {
+                // Si hay suficiente stock, restar la cantidad del stock del producto
+                totalAmount += product.price * item.quantity;
+                product.stock -= item.quantity;
+                await product.save();
+            } else {
+                // Si no hay suficiente stock, añadir el producto a la lista de no comprados
+                productsNotPurchased.push(product._id);
+            }
+        }
+
+        // Si se pudieron comprar productos, generar un ticket
+        if (totalAmount > 0) {
+            const newTicket = new Ticket({
+                code: uuidv4(),  // Generar un código único
+                purchase_datetime: new Date(),
+                amount: totalAmount,
+                purchaser: req.user.email  // El email del usuario que compró
+            });
+            await newTicket.save();
+        }
+
+        // Actualizar el carrito con solo los productos que no pudieron ser comprados
+        cart.products = cart.products.filter(item => productsNotPurchased.includes(item.productId._id));
+        await cart.save();
+
+        // Responder con el total y los productos no comprados
+        res.status(200).json({
+            message: 'Compra completada',
+            totalAmount,
+            productsNotPurchased
+        });
+    } catch (error) {
+        console.error('Error al procesar la compra:', error);
+        res.status(500).json({ error: 'Error al procesar la compra' });
     }
 };

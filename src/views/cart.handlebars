@@ -77,7 +77,31 @@
                 location.reload(); // Recargar la página para actualizar la vista
             })
             .catch(error => console.error('Error:', error));
+
         }
+        function fetchProtectedData() {
+    const token = localStorage.getItem('token'); // Obtener el token del localStorage
+
+    fetch('/api/admin/product/123', {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}` // Enviar el token en el encabezado
+        }
+    })
+    .then(response => {
+        if (response.status === 401 || response.status === 403) {
+            // Si la respuesta es 401 o 403, redirigir al login
+            window.location.href = '/login';
+        } else {
+            return response.json();
+        }
+    })
+    .then(data => {
+        console.log('Datos protegidos:', data);
+    })
+    .catch(error => console.error('Error:', error));
+}
+
     </script>
 </body>
 </html>

@@ -1,19 +1,18 @@
 import jwt from 'jsonwebtoken';
 
 export const authMiddleware = (req, res, next) => {
-    const token = req.cookies.token; // Obtener el token de las cookies
-
-    if (token) {
+    if (req.session.token) {
         try {
-            // Verificar el token JWT
-            const decoded = jwt.verify(token, 'backend'); // Usa la clave secreta que utilizaste para firmar el token
-            req.user = decoded; // Guardar la información del usuario en req.user
+            const decoded = jwt.verify(req.session.token, 'backend');  // Verifica el token
+            req.user = decoded;  // Asigna el usuario decodificado a req.user
+            console.log('Authenticated user:', req.user);  // Verificar si req.user está presente
+            next();  // Continúa al siguiente middleware o controlador
         } catch (err) {
             console.error('Token verification failed:', err.message);
+            res.status(401).json({ error: 'Token inválido o expirado' });
         }
+    } else {
+        res.status(401).json({ error: 'No autenticado' });
     }
-    console.log('Cookies:', req.cookies);
-    console.log('Usuario decodificado:', req.user);
-
-    next(); // Permitir el acceso a la siguiente ruta
 };
+

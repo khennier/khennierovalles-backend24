@@ -37,12 +37,10 @@ export const renderHome = async (req, res) => {
     }
 };
 
+
 export const renderRealTimeProducts = async (req, res) => {
     try {
-        // Obtener todos los productos de la base de datos
-        const products = await Product.find().lean(); // lean() para mejorar el rendimiento
-
-        // Renderizar la vista de productos en tiempo real
+        const products = await Product.find().lean(); // Obtener todos los productos
         res.render('realTimeProducts', {
             title: 'Real-Time Products',
             products
@@ -50,6 +48,25 @@ export const renderRealTimeProducts = async (req, res) => {
     } catch (err) {
         console.error('Failed to fetch real-time products:', err.message);
         res.status(500).json({ status: 'error', message: 'Failed to fetch real-time products' });
+    }
+};
+
+export const addProduct = async (req, res) => {
+    try {
+        const { name, description, price } = req.body;
+        const imageUrl = req.file ? `/uploads/${req.file.filename}` : null; 
+        const newProduct = new Product({
+            name,
+            description,
+            price,
+            imageUrl
+        });
+
+        await newProduct.save();
+        res.redirect('/realtimeproducts'); 
+    } catch (err) {
+        console.error('Error al añadir producto:', err.message);
+        res.status(500).json({ status: 'error', message: 'Error al añadir producto' });
     }
 };
 

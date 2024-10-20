@@ -5,9 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{title}}</title>
     <link rel="stylesheet" href="/src/public/styles.css">
+    <style>
+        .product-card {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin: 10px;
+            display: inline-block;
+            width: 200px;
+            text-align: center;
+        }
+        .product-card img {
+            width: 100%;
+            height: auto;
+        }
+        .product-grid {
+            display: flex;
+            flex-wrap: wrap;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
+        <!-- Pasar el cartId como un data-attribute para usarlo en el frontend -->
+        <div id="cart" data-cart-id="{{cartId}}"></div>
+        
         <!-- Mostrar mensaje de bienvenida y botón de logout si el usuario está autenticado -->
         {{#if isAuthenticated}}
         <p>Welcome back, {{user.first_name}}!</p>
@@ -30,25 +51,25 @@
 
         <h1>{{title}}</h1>
 
-        <!-- Mostrar los productos disponibles -->
-        <h2>Products:</h2>
-        <ul>
+        <!-- Mostrar los productos disponibles en formato "cards" -->
+        <div class="product-grid">
             {{#each products}}
-            <li class="product-item">
-                <div class="product-info">
-                    <span class="product-title"><strong>{{this.name}}</strong></span>
-                    <p class="product-description">{{this.description}}</p>
-                    <p class="product-price">Price: ${{this.price}}</p>
+            <div class="product-card">
+                {{#each thumbnails}}
+                <img src="{{this}}" alt="{{../title}}">
+                {{/each}}
+                <h3>{{title}}</h3>
+                <p>{{description}}</p>
+                <p>Precio: ${{price}}</p>
 
-                    <!-- Mostrar botón "ADD TO CART" siempre, pero redirigir a login si no está autenticado -->
-                    <div class="add-to-cart">
-                        <input type="number" id="quantity-{{this._id}}" value="1" min="1" style="width: 50px;">
-                        <button onclick="addToCart('{{this._id}}', document.getElementById('quantity-{{this._id}}').value)">Add to Cart</button>
-                    </div>
+                <!-- Mostrar botón "ADD TO CART" siempre, pero redirigir a login si no está autenticado -->
+                <div class="add-to-cart">
+                    <input type="number" id="quantity-{{_id}}" value="1" min="1" style="width: 50px;">
+                    <button onclick="addToCart('{{_id}}', document.getElementById('quantity-{{_id}}').value)">Add to Cart</button>
                 </div>
-            </li>
+            </div>
             {{/each}}
-        </ul>
+        </div>
 
         <!-- Enlaces de paginación -->
         <div class="pagination">
@@ -69,33 +90,42 @@
     </div>
 
     <script>
-        // Función de logout
+        // Obtener el cartId desde el HTML
+        const cartElement = document.getElementById('cart');
+        const cartId = cartElement.getAttribute('data-cart-id');
+        
+        // Función de logout en el frontend
         function logout() {
-            fetch('/api/auth/logout', {
-                method: 'POST'
-            })
-            .then(() => {
-                window.location.href = '/'; // Redirigir a la página principal
-            })
-            .catch(error => console.error('Error:', error));
+            localStorage.removeItem('token');  // Eliminar el token JWT del localStorage
+            window.location.href = '/login';  // Redirigir al usuario a la página de login
         }
 
         // Función de agregar al carrito
         function addToCart(productId, quantity) {
-            fetch(`/api/carts/{{cartId}}/products/${productId}`, {
+            const token = localStorage.getItem('token'); // Obtener el JWT almacenado en el navegador
+
+            if (!token) {
+                window.location.href = '/login';  // Si no hay token, redirigir al login
+                return;
+            }
+
+            fetch(`/api/carts/${cartId}/products/${productId}`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` // Enviar token en el header
                 },
                 body: JSON.stringify({ quantity: parseInt(quantity) })
             })
             .then(response => {
-                if (response.status === 401) {
-                    // Redirigir a la página de login si el usuario no está autenticado
-                    window.location.href = '/login';
-                } else {
-                    return response.json();
+                // Verificar el código de estado y manejar diferentes casos
+                if (response.status === 401 || response.status === 403) {
+                    alert('No tienes permisos para esta acción. Por favor, inicia sesión.');
+                    window.location.href = '/login';  // Redirigir si no está autenticado
+                } else if (!response.ok) {
+                    return response.json().then(error => { throw new Error(error.message); });
                 }
+                return response.json();
             })
             .then(data => {
                 if (data && data.status === 'success') {
@@ -105,6 +135,38 @@
                 }
             })
             .catch(error => console.error('Error:', error));
+        }
+
+        // Función para acceder a la ruta protegida
+        function accessProtectedRoute() {
+            const token = localStorage.getItem('token');  // Obtener el token JWT del localStorage
+
+            if (!token) {
+                alert('Necesitas iniciar sesión para acceder a esta ruta.');
+                window.location.href = '/login';  // Redirigir al login si no hay token
+                return;
+            }
+
+            fetch('/api/protected-route', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,  // Enviar el token en el encabezado
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('No autenticado o token inválido');
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert(data.message);  // Mostrar el mensaje de éxito si todo va bien
+            })
+            .catch(error => {
+                console.error('Error:', error.message);
+                alert('Error: ' + error.message);
+            });
         }
     </script>
 </body>

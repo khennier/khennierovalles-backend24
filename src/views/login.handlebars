@@ -9,10 +9,10 @@
 <body>
     <div class="container">
         <h1>Login</h1>
-        <form action="/api/auth/login" method="POST">
+        <form id="loginForm">
             <div class="form-group">
                 <label for="email">Email:</label>
-                <input type="email" id="email" name="email" required> <!-- Usa email -->
+                <input type="email" id="email" name="email" required>
             </div>
             <div class="form-group">
                 <label for="password">Password:</label>
@@ -22,5 +22,46 @@
         </form>
         <p>¿No tienes una cuenta? <a href="/register">Regístrate aquí</a></p>
     </div>
+
+    <script>
+        // Agregar un listener al formulario para manejar el login mediante fetch y almacenar el token
+        document.getElementById('loginForm').addEventListener('submit', function(event) {
+            event.preventDefault();  // Evitar que el formulario se envíe de manera tradicional
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            // Realizar la petición fetch al backend
+            fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email, password })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    // Si el status code no es 2xx, lanzar un error
+                    return response.json().then(error => { throw new Error(error.message || 'Error en el servidor') });
+                }
+                return response.json();  // Si todo va bien, convertir la respuesta a JSON
+            })
+            .then(data => {
+                if (data.token) {
+                    localStorage.setItem('token', data.token);  // Almacenar el token en el localStorage
+                    alert('Login exitoso');
+                    window.location.href = '/';  // Redirigir a la página principal
+                } else {
+                    alert('Error en el login: Token no recibido.');
+                }
+            })
+            .catch(error => {
+                // Mostrar un mensaje de error si algo falla
+                console.error('Error en el login:', error);
+                alert('Error aca aca: ' + error.message);
+            });
+        });
+    </script>
 </body>
 </html>
+

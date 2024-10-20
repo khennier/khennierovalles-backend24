@@ -1,7 +1,7 @@
 export const roleMiddleware = (requiredRole) => {
     return (req, res, next) => {
         if (!req.user) {
-            return res.status(401).render('error', { message: 'No estás autenticado.' });
+            return res.status(401).render('error', { message: 'No estás autenticadooooooo.' });
         }
 
         if (req.user.role !== requiredRole) {

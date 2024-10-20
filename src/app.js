@@ -12,6 +12,7 @@ import protectedRoutes from './routes/protectedRoutes.js';
 import session from 'express-session';
 import connectDB from './config/mongoConfig.js';
 import passport from './config/passport.js'; 
+import initializePassport from './config/passport.js'; // La ruta donde configuras Passport
 import cookieParser from 'cookie-parser'; 
 
 const app = express();
@@ -45,7 +46,11 @@ const hbs = create({
         multiply: (a, b) => a * b,
         calculateTotal: (products) => {
             return products.reduce((total, item) => {
-                return total + item.productId.price * item.quantity;
+                // Verificar si productId no es null y tiene un precio
+                if (item.productId && item.productId.price) {
+                    return total + item.productId.price * item.quantity;
+                }
+                return total;
             }, 0).toFixed(2);
         }
     },
@@ -66,7 +71,7 @@ app.use(express.static(path.join(process.cwd(), 'src/public')));
 app.use(cookieParser()); // Para manejar cookies
 
 // Inicializar Passport
-app.use(passport.initialize()); 
+app.use(passport.initialize());
 
 // Rutas
 app.use('/api/carts', cartRoutes);

@@ -3,16 +3,17 @@ import Cart from '../models/cart.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
+// Registro de usuario
 export const registerUser = async (req, res) => {
     const { first_name, last_name, email, age, password } = req.body;
 
     try {
-        // Verificar si el campo email está presente
+        // Verificar si el correo electrónico está presente
         if (!email) {
             return res.status(400).json({ error: 'El correo electrónico es obligatorio.' });
         }
 
-        // Verificar si el correo electrónico ya existe
+        // Verificar si el correo electrónico ya está registrado
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ error: 'El correo electrónico ya está registrado.' });
@@ -47,32 +48,36 @@ export const registerUser = async (req, res) => {
     }
 };
 
-
-
+// Login de usuario
 export const loginUser = async (req, res) => {
-    const { email, password } = req.body; // Cambia username por email
+    const { email, password } = req.body;  // Cambiado de username a email
 
     try {
-        const user = await User.findOne({ email }); // Busca el usuario por email
+        // 1. Busca el usuario en la base de datos por email
+        const user = await User.findOne({ email });
         if (!user) {
+            console.log("toy aca 1")
             return res.status(400).json({ error: 'Usuario no encontrado' });
         }
 
-        const validPassword = bcrypt.compareSync(password, user.password);
+        // 2. Verifica si la contraseña ingresada coincide con la hasheada
+        const validPassword = await bcrypt.compare(password, user.password);
         if (!validPassword) {
+            console.log("toy aca 2")
             return res.status(400).json({ error: 'Contraseña incorrecta' });
         }
 
-        // Generar el token JWT
-        const token = jwt.sign({ id: user._id, role: user.role }, 'backend', { expiresIn: '1h' });
+        // 3. Genera el token JWT
+        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET || 'backend', { expiresIn: '1h' });
 
-        // Enviar el token como una cookie
-        res.cookie('token', token, { httpOnly: true, secure: false }); // Cambia `secure` a true si usas HTTPS
+        // 4. Enviar el token al frontend en la respuesta JSON (no en la sesión)
+        res.status(200).json({ token });
 
-        // Redirigir a la página principal
-        res.redirect('/');
     } catch (err) {
         console.error('Error al iniciar sesión:', err.message);
+        console.log("toy aca 3")
         res.status(500).json({ error: 'Error al iniciar sesión' });
     }
 };
+
+

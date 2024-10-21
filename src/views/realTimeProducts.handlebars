@@ -118,10 +118,19 @@
                 document.getElementById('update-form').style.display = 'block';
             }
 
-            window.deleteProduct = (id) => {
-                socket.emit('deleteProduct', id);
-            };
+window.deleteProduct = (id) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert('Necesitas iniciar sesión para realizar esta acción.');
+        return;
+    }
+
+    // Emitir el evento al servidor con el token y el ID del producto
+    socket.emit('deleteProduct', { id, token });
+};
+
         });
+        
     </script>
 </body>
 </html>

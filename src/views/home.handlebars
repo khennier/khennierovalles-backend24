@@ -30,24 +30,16 @@
         <div id="cart" data-cart-id="{{cartId}}"></div>
         
         <!-- Mostrar mensaje de bienvenida y botón de logout si el usuario está autenticado -->
-        {{#if isAuthenticated}}
-        <p>Welcome back, {{user.first_name}}!</p>
-        <button onclick="logout()">Logout</button>
-
-        <!-- Mostrar el botón de acceso a /realtimeproducts si el usuario es ADMIN -->
-        {{#if isAdmin}}
-        <div class="admin-panel">
-            <a href="/realtimeproducts" class="button">Acceder a panel de ADMINISTRADOR</a>
+        <div id="auth-section">
+            <div id="guest-buttons" style="display: none;">
+                <a href="/login" class="button">Login</a>
+                <a href="/register" class="button">Sign Up</a>
+            </div>
+            <div id="user-buttons" style="display: none;">
+                <p id="welcome-message"></p>
+                <button onclick="logout()">Logout</button>
+            </div>
         </div>
-        {{/if}}
-
-        {{else}}
-        <!-- Mostrar botones de Login y Sign Up si el usuario no está autenticado -->
-        <div class="auth-buttons">
-            <a href="/login" class="button">Login</a>
-            <a href="/register" class="button">Sign Up</a>
-        </div>
-        {{/if}}
 
         <h1>{{title}}</h1>
 
@@ -81,23 +73,58 @@
             {{/if}}
         </div>
 
-        <!-- Botón para ver el carrito, solo si el usuario está autenticado -->
-        {{#if isAuthenticated}}
+        <!-- Botón para ver el carrito -->
         <div class="cart-button-container">
             <a href="/carts/{{cartId}}" class="button">Ver Carrito</a>
         </div>
-        {{/if}}
     </div>
 
     <script>
         // Obtener el cartId desde el HTML
         const cartElement = document.getElementById('cart');
         const cartId = cartElement.getAttribute('data-cart-id');
-        
-        // Función de logout en el frontend
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('token');
+            const guestButtons = document.getElementById('guest-buttons');
+            const userButtons = document.getElementById('user-buttons');
+            const welcomeMessage = document.getElementById('welcome-message');
+
+            if (token) {
+                // Hacer la solicitud al backend para verificar el token y obtener los datos del usuario
+                fetch('/current', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('No autenticado o token inválido');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    welcomeMessage.innerText = `Bienvenido, ${data.user.first_name}`;
+                    guestButtons.style.display = 'none';
+                    userButtons.style.display = 'block';
+                })
+                .catch(error => {
+                    console.error('Error al verificar autenticación:', error);
+                    guestButtons.style.display = 'block';
+                    userButtons.style.display = 'none';
+                });
+            } else {
+                guestButtons.style.display = 'block';
+                userButtons.style.display = 'none';
+            }
+        });
+
+        // Función de logout
         function logout() {
             localStorage.removeItem('token');  // Eliminar el token JWT del localStorage
-            window.location.href = '/login';  // Redirigir al usuario a la página de login
+            window.location.href = '/';  // Redirigir al usuario a la página de login
         }
 
         // Función de agregar al carrito
@@ -118,14 +145,11 @@
                 body: JSON.stringify({ quantity: parseInt(quantity) })
             })
             .then(response => {
-                // Verificar el código de estado y manejar diferentes casos
                 if (response.status === 401 || response.status === 403) {
-                    alert('No tienes permisos para esta acción. Por favor, inicia sesión.');
                     window.location.href = '/login';  // Redirigir si no está autenticado
-                } else if (!response.ok) {
-                    return response.json().then(error => { throw new Error(error.message); });
+                } else {
+                    return response.json();
                 }
-                return response.json();
             })
             .then(data => {
                 if (data && data.status === 'success') {
@@ -135,38 +159,6 @@
                 }
             })
             .catch(error => console.error('Error:', error));
-        }
-
-        // Función para acceder a la ruta protegida
-        function accessProtectedRoute() {
-            const token = localStorage.getItem('token');  // Obtener el token JWT del localStorage
-
-            if (!token) {
-                alert('Necesitas iniciar sesión para acceder a esta ruta.');
-                window.location.href = '/login';  // Redirigir al login si no hay token
-                return;
-            }
-
-            fetch('/api/protected-route', {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,  // Enviar el token en el encabezado
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('No autenticado o token inválido');
-                }
-                return response.json();
-            })
-            .then(data => {
-                alert(data.message);  // Mostrar el mensaje de éxito si todo va bien
-            })
-            .catch(error => {
-                console.error('Error:', error.message);
-                alert('Error: ' + error.message);
-            });
         }
     </script>
 </body>

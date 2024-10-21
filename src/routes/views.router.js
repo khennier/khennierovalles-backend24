@@ -3,20 +3,31 @@ import { renderHome, renderProductDetails, renderCart, renderRealTimeProducts, a
 import upload from '../middleware/upload.js'; 
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import { roleMiddleware } from '../middleware/roleMiddleware.js';
-import authenticateToken from '../middleware/authenticateToken.js';  // Middleware de autenticación
+import authenticateToken from '../middleware/authenticateToken.js';  
 import passport from 'passport';
 import UserDTO from '../dto/UserDTO.js'; 
+import Product from '../models/Product.js';
 
 
 const router = express.Router();
 
 // Ruta pública: Cargar la página home.handlebars sin autenticación
-router.get('/', (req, res) => {
-    res.render('home', {
-        title: 'Página de Inicio',
-        isAuthenticated: req.user ? true : false,  // Mostrar botones de login/registro según autenticación
-        isAdmin: req.user && req.user.role === 'ADMIN'  // Mostrar funciones de admin si es admin
-    });
+router.get('/', async (req, res) => {
+    try {
+        // Obtener todos los productos desde la base de datos
+        const products = await Product.find();
+        // Renderizar la página de inicio con los productos
+        res.render('home', {
+            title: 'Página de Inicio',
+            products: products, // Pasar los productos a la vista
+            isAuthenticated: req.user ? true : false,
+            isAdmin: req.user && req.user.role === 'ADMIN'
+        });
+
+    } catch (error) {
+        console.error('Error al obtener los productos:', error);
+        res.status(500).send('Error al obtener los productos');
+    }
 });
 
 // Ruta protegida para agregar al carrito
@@ -31,7 +42,7 @@ router.get('/realtimeproducts', authenticateToken, (req, res) => {
         return res.status(403).json({ message: 'No tienes permisos para acceder a esta página' });
     }
     // Aquí va la lógica para cargar la página de administrador
-    res.render('admin', { message: 'Bienvenido Admin' });
+    res.render('ADMIN', { message: 'Bienvenido Admin' });
 });
 
 //Ruta para obtener Detalles de producto 
@@ -65,8 +76,8 @@ router.get('/login', (req, res) => {
 
 
 // Ruta para obtener el usuario actual basado en el JWT
-router.get('/current', passport.authenticate('jwt', { session: false }), (req, res) => {
-    res.json({ user: req.user });
+router.get('/current', authenticateToken, (req, res) => {
+    res.json({ message: 'Usuario autenticado', user: req.user });
 });
 
 //Ruta para postear imagenes
